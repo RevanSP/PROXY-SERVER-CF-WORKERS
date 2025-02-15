@@ -50,7 +50,7 @@ async function handleProxyRequest(request) {
             'Content-Type': contentType,
             'Access-Control-Allow-Methods': 'GET, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Origin': ['https://retroverse-remake.vercel.app', 'http://localhost:3000', 'http://localhost:5173', 'https://booksverse.vercel.app'].includes(request.headers.get('Origin'))
+            'Access-Control-Allow-Origin': ['https://retroverse-remake.vercel.app', 'https://booksverse.vercel.app', 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5500'].includes(request.headers.get('Origin'))
                 ? request.headers.get('Origin')
                 : ''
         };
