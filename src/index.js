@@ -8,7 +8,7 @@ app.get('/api/proxy', async (c) => {
     const targetUrl = new URL(c.req.url).searchParams.get('url');
     if (!targetUrl) return c.json({ error: 'URL parameter is required' }, 400);
 
-    const allowedOrigins = ['https://retroverse-remake.vercel.app', 'https://booksverse.vercel.app', 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5500'];
+    const allowedOrigins = ['https://retroverse-emulator.vercel.app', 'https://booksverse.vercel.app', 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5500'];
     const origin = c.req.header('Origin');
     const referer = c.req.header('Referer');
 
