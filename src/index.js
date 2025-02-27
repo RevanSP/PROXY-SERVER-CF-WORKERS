@@ -1,34 +1,47 @@
-import { Hono } from 'hono';
-
-const app = new Hono();
-
-app.get('/', c => c.json({ error: 'Not Found' }, 404));
-
-app.get('/api/proxy', async (c) => {
-    const targetUrl = new URL(c.req.url).searchParams.get('url');
-    if (!targetUrl) return c.json({ error: 'URL parameter is required' }, 400);
-
-    const allowedOrigins = ['https://retroverse-remake.vercel.app', 'https://booksverse.vercel.app', 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5500'];
-    const origin = c.req.header('Origin');
-    const referer = c.req.header('Referer');
-
-    const isLocalhost = ['localhost', '127.0.0.1'].includes(new URL(c.req.url).hostname);
-
-    if (isLocalhost) {
-        return handleProxyRequest(c, targetUrl, origin);
-    }
-
-    if (!allowedOrigins.includes(origin) && !allowedOrigins.includes(referer)) {
-        return c.json({ error: 'Forbidden' }, 403);
-    }
-
-    return handleProxyRequest(c, targetUrl, origin);
+addEventListener('fetch', event => {
+    event.respondWith(handleRequest(event.request));
 });
 
-const handleProxyRequest = async (c, targetUrl, origin) => {
+async function handleRequest(request) {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/' || url.pathname.startsWith('/api/proxy')) {
+        return handleProxyRequest(request);
+    }
+
+    return new Response(JSON.stringify({ error: 'Not Found' }), {
+        status: 404,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}
+
+async function handleProxyRequest(request) {
+    const url = new URL(request.url);
+    const targetUrl = url.searchParams.get('url');
+
+    if (!targetUrl) {
+        return new Response(JSON.stringify({ error: 'URL parameter is required' }), {
+            status: 400,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    }
+
     try {
-        const response = await fetch(decodeURIComponent(targetUrl));
-        if (!response.ok) return c.json({ error: 'Failed to fetch the resource' }, response.status);
+        const decodedUrl = decodeURIComponent(targetUrl);
+        const response = await fetch(decodedUrl);
+
+        if (!response.ok) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch the resource' }), {
+                status: response.status,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
 
         const body = await response.arrayBuffer();
         const contentType = response.headers.get('content-type') || 'application/octet-stream';
@@ -37,16 +50,19 @@ const handleProxyRequest = async (c, targetUrl, origin) => {
             'Content-Type': contentType,
             'Access-Control-Allow-Methods': 'GET, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Origin': origin
+            'Access-Control-Allow-Origin': ['https://retroverse-remake.vercel.app', 'https://booksverse.vercel.app', 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:5500'].includes(request.headers.get('Origin'))
+                ? request.headers.get('Origin')
+                : ''
         };
 
-        return c.body(body, { headers });
+        return new Response(body, { headers });
     } catch (error) {
         console.error('Error fetching the resource:', error);
-        return c.json({ error: 'Failed to fetch the resource' }, 500);
+        return new Response(JSON.stringify({ error: 'Failed to fetch the resource' }), {
+            status: 500,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     }
-};
-
-app.all('*', c => c.json({ error: 'Not Found' }, 404));
-
-export default app;
+}
