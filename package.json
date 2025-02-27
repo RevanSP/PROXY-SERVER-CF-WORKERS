@@ -4,5 +4,8 @@
   "devDependencies": {
     "wrangler": "3.86.1"
   },
+  "dependencies": {
+		"hono": "^4.7.2"
+	},
   "private": true
 }
